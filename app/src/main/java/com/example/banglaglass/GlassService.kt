@@ -5,42 +5,43 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.graphics.PixelFormat
 import android.graphics.Color
+import android.graphics.PixelFormat
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.IBinder
-import android.speech.tts.TextToSpeech
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
-import com.google.mlkit.nl.translate.TranslateLanguage
-import com.google.mlkit.nl.translate.Translation
-import com.google.mlkit.nl.translate.TranslatorOptions
-import java.util.Locale
 
-class GlassService : Service(), TextToSpeech.OnInitListener {
+class GlassService : Service() {
 
     private lateinit var wm: WindowManager
     private lateinit var glass: TextView
     private lateinit var params: WindowManager.LayoutParams
-    private var tts: TextToSpeech? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
         startForeground(1, buildNotification())
-        tts = TextToSpeech(this, this)
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
 
         glass = TextView(this)
         glass.text = "🔍"
-        glass.textSize = 36f
-        glass.setBackgroundColor(Color.argb(160, 30, 30, 30))
-        glass.setPadding(24, 24, 24, 24)
+        glass.textSize = 34f
+        glass.gravity = Gravity.CENTER
+        glass.typeface = Typeface.DEFAULT_BOLD
+        glass.setPadding(28, 28, 28, 28)
+        val bg = GradientDrawable()
+        bg.shape = GradientDrawable.OVAL
+        bg.setColor(Color.argb(210, 21, 101, 192))
+        bg.setStroke(4, Color.WHITE)
+        glass.background = bg
 
         params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -75,39 +76,28 @@ class GlassService : Service(), TextToSpeech.OnInitListener {
                     wm.updateViewLayout(glass, params)
                 }
                 MotionEvent.ACTION_UP -> {
-                    Toast.makeText(
-                        this,
-                        "এই সংস্করণে স্ক্রিনের লেখা পড়ার অংশ এখনো যোগ হয়নি",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    val svc = ReaderService.instance
+                    if (svc == null) {
+                        Toast.makeText(
+                            this,
+                            "আগে Accessibility থেকে BanglaGlass চালু করুন",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        val x = e.rawX.toInt()
+                        val y = e.rawY.toInt()
+                        glass.visibility = View.INVISIBLE
+                        glass.postDelayed({
+                            svc.readAt(x, y)
+                            glass.visibility = View.VISIBLE
+                        }, 150)
+                    }
                 }
             }
             true
         }
 
         wm.addView(glass, params)
-    }
-
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale.forLanguageTag(MainActivity.targetLang)
-        }
-    }
-
-    fun translateAndSpeak(text: String) {
-        val target = TranslateLanguage.fromLanguageTag(MainActivity.targetLang) ?: return
-        val options = TranslatorOptions.Builder()
-            .setSourceLanguage(TranslateLanguage.ENGLISH)
-            .setTargetLanguage(target)
-            .build()
-        val translator = Translation.getClient(options)
-        translator.downloadModelIfNeeded()
-            .addOnSuccessListener {
-                translator.translate(text).addOnSuccessListener { result ->
-                    tts?.language = Locale.forLanguageTag(MainActivity.targetLang)
-                    tts?.speak(result, TextToSpeech.QUEUE_FLUSH, null, "bg")
-                }
-            }
     }
 
     private fun buildNotification(): Notification {
@@ -130,6 +120,5 @@ class GlassService : Service(), TextToSpeech.OnInitListener {
     override fun onDestroy() {
         super.onDestroy()
         if (::glass.isInitialized) wm.removeView(glass)
-        tts?.shutdown()
     }
 }
