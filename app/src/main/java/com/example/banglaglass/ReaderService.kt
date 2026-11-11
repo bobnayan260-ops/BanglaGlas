@@ -35,11 +35,15 @@ class ReaderService : AccessibilityService(), TextToSpeech.OnInitListener {
         super.onDestroy()
     }
 
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    }
+
     fun readAt(x: Int, y: Int) {
         val root = rootInActiveWindow
         val text = findText(root, x, y)
         if (text == null) {
-            Toast.makeText(this, "এখানে কোনো লেখা পাওয়া যায়নি", Toast.LENGTH_SHORT).show()
+            toast("No text here")
             return
         }
         translateAndSpeak(text)
@@ -70,4 +74,25 @@ class ReaderService : AccessibilityService(), TextToSpeech.OnInitListener {
             speak(text, "en")
             return
         }
-        Toast.makeText(this, "অনুবাদ হচ্
+        toast("Translating...")
+        val options = TranslatorOptions.Builder()
+            .setSourceLanguage(TranslateLanguage.ENGLISH)
+            .setTargetLanguage(target)
+            .build()
+        val translator = Translation.getClient(options)
+        translator.downloadModelIfNeeded()
+            .addOnSuccessListener {
+                translator.translate(text)
+                    .addOnSuccessListener { result ->
+                        toast(result)
+                        speak(result, lang)
+                    }
+                    .addOnFailureListener {
+                        toast("Translation failed")
+                    }
+            }
+            .addOnFailureListener {
+                toast("Language download failed. Check internet")
+            }
+    }
+}
