@@ -8,8 +8,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
-        android:label="BanglaGlass"
-        android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="Nayan Lens"
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
         <activity
             android:name=".MainActivity"
@@ -32,7 +34,7 @@
         <service
             android:name=".ReaderService"
             android:exported="true"
-            android:label="BanglaGlass"
+            android:label="Nayan Lens"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
