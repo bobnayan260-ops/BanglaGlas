@@ -8,14 +8,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.Gravity
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.Spinner
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -24,127 +21,79 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         var targetLang: String = "bn"
+        var uiBn: Boolean = true
+        var on: Boolean = false
     }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
-    private fun card(): LinearLayout {
-        val c = LinearLayout(this)
-        c.orientation = LinearLayout.VERTICAL
-        c.setPadding(dp(18), dp(16), dp(18), dp(16))
-        val bg = GradientDrawable()
-        bg.setColor(Color.WHITE)
-        bg.cornerRadius = dp(16).toFloat()
-        c.background = bg
-        val lp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        lp.setMargins(0, 0, 0, dp(14))
-        c.layoutParams = lp
-        return c
+    private fun t(bn: String, en: String): String = if (uiBn) bn else en
+
+    private fun tv(text: String, size: Float, color: Int, bold: Boolean = false, center: Boolean = false): TextView {
+        val v = TextView(this)
+        v.text = text
+        v.textSize = size
+        v.setTextColor(color)
+        if (bold) v.typeface = Typeface.DEFAULT_BOLD
+        if (center) v.gravity = Gravity.CENTER_HORIZONTAL
+        return v
     }
 
-    private fun label(t: String, size: Float, color: Int, bold: Boolean): TextView {
-        val tv = TextView(this)
-        tv.text = t
-        tv.textSize = size
-        tv.setTextColor(color)
-        if (bold) tv.typeface = Typeface.DEFAULT_BOLD
-        return tv
+    private fun pill(text: String, sel: Boolean, click: () -> Unit): TextView {
+        val p = tv(text, 13f, Color.parseColor(if (sel) "#0C447C" else "#333333"), sel, false)
+        p.gravity = Gravity.CENTER
+        val bg = GradientDrawable()
+        bg.cornerRadius = dp(16).toFloat()
+        bg.setColor(Color.parseColor(if (sel) "#E6F1FB" else "#FFFFFF"))
+        bg.setStroke(dp(1), Color.parseColor(if (sel) "#85B7EB" else "#CCCCCC"))
+        p.background = bg
+        p.setPadding(dp(4), dp(9), dp(4), dp(9))
+        val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        lp.setMargins(dp(3), dp(3), dp(3), dp(3))
+        p.layoutParams = lp
+        p.setOnClickListener { click() }
+        return p
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        render()
+    }
+
+    private fun render() {
+        val blue = Color.parseColor("#0C447C")
+        val coral = Color.parseColor("#D85A30")
 
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
-        root.setBackgroundColor(Color.parseColor("#EEF3FB"))
+        root.setBackgroundColor(Color.WHITE)
 
-        val header = LinearLayout(this)
-        header.orientation = LinearLayout.VERTICAL
-        header.setPadding(dp(22), dp(48), dp(22), dp(24))
-        header.setBackgroundColor(Color.parseColor("#1565C0"))
-        header.addView(label("BanglaGlass", 28f, Color.WHITE, true))
-        header.addView(label("ইংরেজি লেখা বাংলায় পড়ুন ও শুনুন", 15f, Color.parseColor("#D6E4F7"), false))
-        root.addView(header)
-
-        val body = LinearLayout(this)
-        body.orientation = LinearLayout.VERTICAL
-        body.setPadding(dp(16), dp(16), dp(16), dp(16))
-
-        val c1 = card()
-        val status = label("গ্লাস বন্ধ আছে", 20f, Color.parseColor("#C62828"), true)
-        c1.addView(status)
-        val toggle = Switch(this)
-        toggle.text = "গ্লাস চালু করুন"
-        toggle.textSize = 18f
-        toggle.setPadding(0, dp(10), 0, 0)
-        c1.addView(toggle)
-        body.addView(c1)
-        val c2 = card()
-        c2.addView(label("যে ভাষায় শুনতে চান", 16f, Color.parseColor("#37474F"), true))
-        val names = listOf("বাংলা", "English", "हिन्दी", "العربية", "Español", "Français")
-        val codes = listOf("bn", "en", "hi", "ar", "es", "fr")
-        val spinner = Spinner(this)
-        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                targetLang = codes[pos]
-            }
-            override fun onNothingSelected(p: AdapterView<*>?) {}
+        val top = LinearLayout(this)
+        top.orientation = LinearLayout.HORIZONTAL
+        top.gravity = Gravity.CENTER_VERTICAL
+        top.setPadding(dp(20), dp(40), dp(20), 0)
+        top.addView(tv("LENS", 13f, blue, true))
+        val sp = View(this)
+        sp.layoutParams = LinearLayout.LayoutParams(0, 1, 1f)
+        top.addView(sp)
+        val lb = tv(if (uiBn) "English" else "বাংলা", 14f, blue, true)
+        lb.setOnClickListener {
+            uiBn = !uiBn
+            render()
         }
-        c2.addView(spinner)
-        body.addView(c2)
+        top.addView(lb)
+        root.addView(top)
 
-        val c3 = card()
-        c3.addView(label("লেখা পড়ার অনুমতি", 16f, Color.parseColor("#37474F"), true))
-        c3.addView(label("একবার চালু করলেই হবে", 13f, Color.parseColor("#78909C"), false))
-        val accBtn = Button(this)
-        accBtn.text = "Accessibility"
-        accBtn.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
-        c3.addView(accBtn)
-        body.addView(c3)
+        val name = tv("Nayan", 48f, blue, true, true)
+        name.letterSpacing = 0.08f
+        name.setPadding(0, dp(28), 0, 0)
+        root.addView(name)
 
-        val c4 = card()
-        c4.addView(label("কীভাবে ব্যবহার করবেন", 16f, Color.parseColor("#37474F"), true))
-        c4.addView(
-            label(
-                "১. গ্লাস চালু করুন\n২. মেসেঞ্জারে ইংরেজি মেসেজ খুলুন\n৩. নীল গ্লাস টেনে লেখার উপর ছেড়ে দিন\n৪. বাংলা অনুবাদ শুনুন",
-                15f, Color.parseColor("#455A64"), false
-            )
-        )
-        body.addView(c4)
-
-        val scroll = ScrollView(this)
-        scroll.addView(body)
-        root.addView(scroll)
-        setContentView(root)
-
-        toggle.setOnCheckedChangeListener { _, isOn ->
-            if (isOn) {
-                if (!Settings.canDrawOverlays(this)) {
-                    Toast.makeText(this, "Permission needed", Toast.LENGTH_LONG).show()
-                    startActivity(
-                        Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:$packageName")
-                        )
-                    )
-                    toggle.isChecked = false
-                } else {
-                    val i = Intent(this, GlassService::class.java)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(i) else startService(i)
-                    status.text = "গ্লাস চালু আছে"
-                    status.setTextColor(Color.parseColor("#2E7D32"))
-                }
-            } else {
-                stopService(Intent(this, GlassService::class.java))
-                status.text = "গ্লাস বন্ধ আছে"
-                status.setTextColor(Color.parseColor("#C62828"))
-            }
-        }
-    }
-}
+        val bar = View(this)
+        val bl = LinearLayout.LayoutParams(dp(56), dp(3))
+        bl.gravity = Gravity.CENTER_HORIZONTAL
+        bl.setMargins(0, dp(8), 0, dp(6))
+        bar.layoutParams = bl
+        bar.setBackgroundColor(coral)
+        root.addView(bar)
+        root.addView(tv("নয়ন", 22f, coral, true, true))
