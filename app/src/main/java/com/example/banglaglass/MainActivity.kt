@@ -96,4 +96,110 @@ class MainActivity : AppCompatActivity() {
         bar.layoutParams = bl
         bar.setBackgroundColor(coral)
         root.addView(bar)
-        root.addView(tv("নয়ন", 22f, coral, true, true))
+        root.addView(tv("নয়ন", 22f, coral, true, true))val swLp = LinearLayout.LayoutParams(dp(130), dp(66))
+        swLp.gravity = Gravity.CENTER_HORIZONTAL
+        swLp.setMargins(0, dp(30), 0, dp(14))
+        val sw = FrameLayout(this)
+        sw.layoutParams = swLp
+        val swBg = GradientDrawable()
+        swBg.cornerRadius = dp(33).toFloat()
+        swBg.setColor(Color.parseColor(if (on) "#4CAF50" else "#E4E4E8"))
+        sw.background = swBg
+        val knob = View(this)
+        val kd = GradientDrawable()
+        kd.shape = GradientDrawable.OVAL
+        kd.setColor(Color.WHITE)
+        kd.setStroke(dp(1), Color.parseColor("#CCCCCC"))
+        knob.background = kd
+        val kLp = FrameLayout.LayoutParams(dp(54), dp(54))
+        kLp.topMargin = dp(6)
+        kLp.leftMargin = if (on) dp(70) else dp(6)
+        knob.layoutParams = kLp
+        sw.addView(knob)
+        root.addView(sw)
+
+        sw.setOnClickListener {
+            if (!on) {
+                if (!Settings.canDrawOverlays(this)) {
+                    Toast.makeText(this, t("অনুমতি দিন, তারপর ফিরে এসে আবার চাপুন", "Allow the permission, then come back and tap again"), Toast.LENGTH_LONG).show()
+                    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                } else {
+                    val svcIntent = Intent(this, GlassService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(svcIntent) else startService(svcIntent)
+                    on = true
+                    render()
+                }
+            } else {
+                stopService(Intent(this, GlassService::class.java))
+                on = false
+                render()
+            }
+        }
+
+        val status = tv(if (on) t("চালু আছে", "On") else t("বন্ধ আছে", "Off"), 22f, Color.parseColor(if (on) "#2E7D32" else "#1A1A1A"), true, true)
+        root.addView(status)
+        val hint = tv(if (on) t("গ্লাস পাশে ভাসছে", "The lens is floating at the edge") else t("সুইচ চালু করলে গ্লাস ভেসে উঠবে", "Turn on to show the floating lens"), 13f, Color.parseColor("#666666"), false, true)
+        hint.setPadding(dp(24), dp(4), dp(24), dp(18))
+        root.addView(hint)
+
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.setBackgroundColor(Color.parseColor("#FAFAFA"))
+        card.setPadding(dp(14), dp(16), dp(14), dp(28))
+        card.addView(tv(t("ভাষা মডেল", "Language model"), 16f, Color.parseColor("#1A1A1A"), true))
+        val sub = tv(t("যে ভাষায় শুনতে চান বেছে নিন", "Choose the language you want to hear"), 12f, Color.parseColor("#666666"))
+        sub.setPadding(0, 0, 0, dp(8))
+        card.addView(sub)
+
+        val names = listOf("বাংলা", "English", "हिन्दी", "اردو", "العربية", "中文", "日本語", "한국어", "Español", "Français", "Deutsch", "Русский", "Türkçe", "Indonesia", "Italiano", "Português", "தமிழ்", "తెలుగు", "मराठी", "ગુજરાતી", "ಕನ್ನಡ", "Tiếng Việt", "ไทย", "فارسی")
+        val codes = listOf("bn", "en", "hi", "ur", "ar", "zh", "ja", "ko", "es", "fr", "de", "ru", "tr", "id", "it", "pt", "ta", "te", "mr", "gu", "kn", "vi", "th", "fa")
+        var idx = 0
+        while (idx < names.size) {
+            val row = LinearLayout(this)
+            row.orientation = LinearLayout.HORIZONTAL
+            for (j in idx until minOf(idx + 3, names.size)) {
+                val code = codes[j]
+                row.addView(pill(names[j], code == targetLang) {
+                    targetLang = code
+                    render()
+                })
+            }
+            card.addView(row)
+            idx += 3
+        }
+
+        val acc = tv(t("লেখা পড়ার অনুমতি চালু করুন", "Enable text reading"), 14f, blue, true, true)
+        val accBg = GradientDrawable()
+        accBg.cornerRadius = dp(10).toFloat()
+        accBg.setColor(Color.parseColor("#E6F1FB"))
+        acc.background = accBg
+        acc.setPadding(0, dp(12), 0, dp(12))
+        val accLp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        accLp.setMargins(0, dp(16), 0, 0)
+        acc.layoutParams = accLp
+        acc.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+        card.addView(acc)
+
+        val yt = tv("YouTube", 15f, Color.parseColor("#791F1F"), true, true)
+        val ytBg = GradientDrawable()
+        ytBg.cornerRadius = dp(10).toFloat()
+        ytBg.setColor(Color.parseColor("#FCEBEB"))
+        yt.background = ytBg
+        yt.setPadding(0, dp(12), 0, dp(12))
+        val ytLp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        ytLp.setMargins(0, dp(10), 0, 0)
+        yt.layoutParams = ytLp
+        yt.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://youtube.com/@usaproxtv")))
+        }
+        card.addView(yt)
+
+        root.addView(card)
+        val scroll = ScrollView(this)
+        scroll.setBackgroundColor(Color.WHITE)
+        scroll.addView(root)
+        setContentView(scroll)
+    }
+}
