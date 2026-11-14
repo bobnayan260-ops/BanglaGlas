@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
         bar.layoutParams = bl
         bar.setBackgroundColor(coral)
         root.addView(bar)
-        root.addView(tv("নয়ন", 22f, coral, true, true))val swLp = LinearLayout.LayoutParams(dp(130), dp(66))
+        root.addView(tv("noyon", 22f, coral, true, true))val swLp = LinearLayout.LayoutParams(dp(130), dp(66))
         swLp.gravity = Gravity.CENTER_HORIZONTAL
         swLp.setMargins(0, dp(30), 0, dp(14))
         val sw = FrameLayout(this)
